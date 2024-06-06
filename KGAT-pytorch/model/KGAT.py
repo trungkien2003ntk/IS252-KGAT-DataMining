@@ -184,28 +184,35 @@ class KGAT(nn.Module):
         loss = kg_loss + self.kg_l2loss_lambda * l2_loss
         return loss
 
-
+    
     def update_attention_batch(self, h_list, t_list, r_idx):
-        r_embed = self.relation_embed.weight[r_idx]
-        W_r = self.trans_M[r_idx]
+        r_embed = self.relation_embed.weight[r_idx]  # Get embedding for the relation
+        W_r = self.trans_M[r_idx]                      # Get transformation matrix for the relation
 
-        # Equation (4)
-        chunk_size = 10000
-        v_list = []
+        # Chunking for memory efficiency (NEW)
+        chunk_size = 10000  # Adjust this based on your memory constraints and dataset
+        v_list = []  # List to store attention scores for each chunk
+
         for chunk_id in range(0, len(h_list), chunk_size):
-            h_list_chunk = h_list[chunk_id: chunk_id + chunk_size]
-            t_list_chunk = t_list[chunk_id: chunk_id + chunk_size]
-            
+            # Process input in chunks
+            h_list_chunk = h_list[chunk_id:chunk_id + chunk_size]
+            t_list_chunk = t_list[chunk_id:chunk_id + chunk_size]
+
+            # Get embeddings for the entities in this chunk
             h_embed_chunk = self.entity_user_embed.weight[h_list_chunk]
             t_embed_chunk = self.entity_user_embed.weight[t_list_chunk]
 
-            r_mul_h_chunk = torch.matmul(h_embed_chunk, W_r)
-            r_mul_t_chunk = torch.matmul(t_embed_chunk, W_r)
+            # Equation (4) - Attention calculation
+            r_mul_h_chunk = torch.matmul(h_embed_chunk, W_r)  # Transform head embeddings
+            r_mul_t_chunk = torch.matmul(t_embed_chunk, W_r)  # Transform tail embeddings
 
+            # Calculate attention scores for the chunk and append
             v_chunk = torch.sum(r_mul_t_chunk * torch.tanh(r_mul_h_chunk + r_embed), dim=1)
             v_list.append(v_chunk)
+
+        # Concatenate attention scores from all chunks
         v_list = torch.cat(v_list)
-        print(v_list.shape)
+        print(v_list.shape)  # (For debugging, can be removed later)
         return v_list
 
 
