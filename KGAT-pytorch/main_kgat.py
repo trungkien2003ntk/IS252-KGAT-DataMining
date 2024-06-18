@@ -177,6 +177,11 @@ def train(args):
         logging.info('Update Attention: Epoch {:04d} | Total Time {:.1f}s'.format(epoch, time() - time5))
 
         logging.info('CF + KG Training: Epoch {:04d} | Total Time {:.1f}s'.format(epoch, time() - time0))
+        
+        
+        user_id_to_recommend = 17  # Replace with the actual user ID you want to recommend for
+        top_k_recommendations = 20  # Set the number of top recommendations you want
+        recommend_for_user(model, data, user_id_to_recommend, device, top_k=top_k_recommendations)
 
         # evaluate cf
         if (epoch % args.evaluate_every) == 0 or epoch == args.n_epoch:
@@ -199,9 +204,6 @@ def train(args):
                 logging.info('Save model on epoch {:04d}!'.format(epoch))
                 best_epoch = epoch
 
-        user_id_to_recommend = 17  # Replace with the actual user ID you want to recommend for
-        top_k_recommendations = 20  # Set the number of top recommendations you want
-        recommend_for_user(model, data, user_id_to_recommend, device, top_k=top_k_recommendations)
 
 
     # save metrics
