@@ -7,6 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 import torch.nn as nn
 import torch.optim as optim
+import torch
 
 from model.KGAT import KGAT
 from parser.parser_kgat import parse_kgat_args
@@ -198,6 +199,11 @@ def train(args):
                 logging.info('Save model on epoch {:04d}!'.format(epoch))
                 best_epoch = epoch
 
+        user_id_to_recommend = 17  # Replace with the actual user ID you want to recommend for
+        top_k_recommendations = 20  # Set the number of top recommendations you want
+        recommend_for_user(model, data, user_id_to_recommend, device, top_k=top_k_recommendations)
+
+
     # save metrics
     metrics_df = [epoch_list]
     metrics_cols = ['epoch_idx']
@@ -237,9 +243,28 @@ def predict(args):
     print('CF Evaluation: Precision [{:.4f}, {:.4f}], Recall [{:.4f}, {:.4f}], NDCG [{:.4f}, {:.4f}]'.format(
         metrics_dict[k_min]['precision'], metrics_dict[k_max]['precision'], metrics_dict[k_min]['recall'], metrics_dict[k_max]['recall'], metrics_dict[k_min]['ndcg'], metrics_dict[k_max]['ndcg']))
 
+def recommend_for_user(model, dataloader, user_id, device, top_k=10):
+    model.eval()
+    user_tensor = torch.LongTensor([user_id]).to(device)
+    item_ids = torch.arange(dataloader.n_items, dtype=torch.long).to(device)
+
+    with torch.no_grad():
+        scores = model(user_tensor, item_ids, mode='predict').cpu().numpy().flatten()
+
+    # Sort the scores and get the top K items
+    top_k_indices = np.argsort(scores)[::-1][:top_k]  # Descending order
+    top_k_scores = scores[top_k_indices]
+    top_k_items = item_ids[top_k_indices].cpu().numpy()
+
+    print(f"User {user_id} Top {top_k} Recommendations:")
+    for idx in range(top_k):
+        print(f"Item ID: {top_k_items[idx]}, Score: {top_k_scores[idx]}")
+
+    return top_k_items, top_k_scores
 
 
 if __name__ == '__main__':
+
     args = parse_kgat_args()
     train(args)
     # predict(args)

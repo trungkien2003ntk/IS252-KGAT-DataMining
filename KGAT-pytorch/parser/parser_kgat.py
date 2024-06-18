@@ -62,6 +62,10 @@ def parse_kgat_args():
     parser.add_argument('--Ks', nargs='?', default='[20, 40, 60, 80, 100]',
                         help='Calculate metric@K when evaluating.')
 
+    parser.add_argument('--mode', type=str, default='evaluate', choices=['evaluate', 'recommend'],
+                        help="Mode to run the script in. 'evaluate' for full evaluation, 'recommend' for single user recommendation.")
+    parser.add_argument('--user_id', type=int, default=None, help="User ID for single user recommendation mode.")
+
     args = parser.parse_args()
 
     save_dir = 'trained_model/KGAT/{}/embed-dim{}_relation-dim{}_{}_{}_{}_lr{}_pretrain{}/'.format(
